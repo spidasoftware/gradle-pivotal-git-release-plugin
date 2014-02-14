@@ -16,7 +16,7 @@ pivotal stories were resolved by the current build.
 
 Add to your build.gradle file
 
-    apply plugin: 'idea'
+    apply plugin: 'releaseNotes'
 
 ...
 
