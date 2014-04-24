@@ -1,28 +1,51 @@
 apply plugin: 'groovy'
 apply plugin: 'idea'
 apply plugin: 'maven'
+
+jar.baseName = 'releaseNotes'
 group = 'com.spidasoftware'
 version = '0.1-SNAPSHOT'
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
+def getMavenSettings() {
+	// Read artifactory username and password from .m2/settings.xml (gradle does not do this)
+	File mavenSettings = new File(System.getProperty("user.home"), ".m2/settings.xml")
+	def settings = [:]
+	if(mavenSettings.exists()){
+		def root = new XmlSlurper().parse(mavenSettings)
+		def serverElement = root."servers"."server".find{ it."id".text() == "spida" }
+		settings.username = serverElement.username.text()
+		settings.password = serverElement.password.text()
+	}
+	return settings
+}
 
 repositories {
 	mavenCentral()
 	maven { url "https://www.spidasoftware.com/artifactory/exposed-repo" }
 }
 
+uploadArchives {
+	def mavenSettings = getMavenSettings()
+	repositories.mavenDeployer {
+		repository(url: "https://dev.spidasoftware.com/artifactory/exposed-repo") {
+			authentication(userName: mavenSettings["username"], password: mavenSettings["password"])
+		}
+	}
+}
 
+configurations {
+	deployerJars
+}
+
+// change gradle to automatically pull the newest version of all snapshot dpendencies marked "changing"
+configurations.all {
+	resolutionStrategy.cacheChangingModulesFor 0, 'hours'
+}
 
 test {
 	testLogging.showStandardStreams = true
-}
-
-repositories {
-    mavenCentral()
-}
-configurations {
-	deployerJars
 }
 
 dependencies {
@@ -32,46 +55,4 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
 	deployerJars "org.apache.maven.wagon:wagon-http:2.2"
 
-}
-
-// change gradle to automatically pull the newest version of all snapshot dpendencies marked "changing"
-configurations.all {
-	resolutionStrategy.cacheChangingModulesFor 0, 'hours'
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Read maven settings.xml (gradle does not do this yet)
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
-private def getMavenSettings() {
-	String userHome = System.getProperty("user.home");
-	File mavenSettings = new File(userHome, ".m2/settings.xml")
-	if(mavenSettings.exists()){
-		def xmlSlurper = new XmlSlurper()
-		def root = xmlSlurper.parse(mavenSettings)
-		def settingsMap = [:]
-
-		def locations = root."profiles"."profile".find{it."id".text() == "artifactory"}."properties"
-		settingsMap.snapshots = locations."snapshotsLocation"
-		settingsMap.releases = locations."releasesLocation"
-
-		def serverElement = root."servers"."server".find{ it."id".text() == "spida" }
-		settingsMap.username = serverElement.username.text()
-		settingsMap.password = serverElement.password.text()
-		return settingsMap
-	} else {
-		return [:]
-	}
-}
-
-
-uploadArchives {
-	def mavenSettings = getMavenSettings()
-	repositories.mavenDeployer {
-		repository(url: mavenSettings["releases"]) {
-			authentication(userName: mavenSettings["username"], password: mavenSettings["password"])
-		}
-		snapshotRepository(url: mavenSettings["snapshots"]) {
-			authentication(userName: mavenSettings["username"], password: mavenSettings["password"])
-		}
-	}
 }
