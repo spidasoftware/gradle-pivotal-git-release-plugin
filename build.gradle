@@ -27,10 +27,10 @@ repositories {
 }
 
 uploadArchives {
-	def mavenSettings = getMavenSettings()
+	def settings = getMavenSettings()
 	repositories.mavenDeployer {
 		repository(url: "https://dev.spidasoftware.com/artifactory/exposed-repo") {
-			authentication(userName: mavenSettings["username"], password: mavenSettings["password"])
+			authentication(userName: settings.username, password: settings.password)
 		}
 	}
 }
