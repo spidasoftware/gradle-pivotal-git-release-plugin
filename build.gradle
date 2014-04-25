@@ -8,29 +8,26 @@ version = '0.1-SNAPSHOT'
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
-def getMavenSettings() {
-	// Read artifactory username and password from .m2/settings.xml (gradle does not do this)
-	File mavenSettings = new File(System.getProperty("user.home"), ".m2/settings.xml")
-	def settings = [:]
-	if(mavenSettings.exists()){
-		def root = new XmlSlurper().parse(mavenSettings)
-		def serverElement = root."servers"."server".find{ it."id".text() == "spida" }
-		settings.username = serverElement.username.text()
-		settings.password = serverElement.password.text()
-	}
-	return settings
-}
+def m2Settings = {
+	def root = new XmlSlurper().parse(new File(System.getProperty("user.home"), ".m2/settings.xml"))
+	def server = root.servers.server.find{ it.id.text() == "spida" }
+	def repos = root.profiles.profile.find{ it.id.text() == "artifactory" }.properties
+	[	username: server.username.text(),
+		password: server.password.text(),
+		exposed: repos.exposedLocation.text(),
+		snapshots: repos.snapshotsLocation.text(),
+		releases: repos.releasesLocation.text()		]
+}()
 
 repositories {
 	mavenCentral()
-	maven { url "https://www.spidasoftware.com/artifactory/exposed-repo" }
+	maven { url m2Settings.exposed }
 }
 
 uploadArchives {
-	def settings = getMavenSettings()
 	repositories.mavenDeployer {
-		repository(url: "https://dev.spidasoftware.com/artifactory/exposed-repo") {
-			authentication(userName: settings.username, password: settings.password)
+		repository(url: m2Settings.exposed) {
+			authentication(userName: m2Settings.username, password: m2Settings.password)
 		}
 	}
 }
