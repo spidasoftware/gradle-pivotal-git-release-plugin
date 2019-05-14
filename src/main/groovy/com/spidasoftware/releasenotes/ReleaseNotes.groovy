@@ -22,15 +22,20 @@ class ReleaseNotes {
 
 	String start = "HEAD"
 	String end = "HEAD"
+	String label
 	def project
 	def token
-	def ticketRegex = ~/#\d{6,}/
+	def ticketRegex = ~/\d{6,}/
 	def numberRegex = ~/\d{6,}/
 	def ptUrl = "https://www.pivotaltracker.com/services/v5/projects/"
 	def headers = ["Story ID", "Type", "Name", "Description", "URL"]
 	def propertyMap = ["Story ID":"id", "Type":"story_type", "Name":"name", "Description":"description", "URL":"url" ]
 
-	File generateReleaseNotes(file) {
+	/**
+	 * Generates a release notes report containing all
+	 * @param file the file to output to
+	 */
+	void generateReleaseNotes(file) {
 
 		log.info("(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)")
 		log.info("Generating release notes for ${branch} between ${start} and ${end}.")
@@ -42,15 +47,48 @@ class ReleaseNotes {
 		log.info("Found ${tickets.size()} tickets: ${tickets}")
 
 		def stories = getStories(tickets)
+
 		log.info("Retrieved ${stories.size()} stories.")
 		log.trace(stories)
 
 		FileWriter writer = new FileWriter(file)
 		IndentPrinter printer = new IndentPrinter(writer)
 
-		writeStories(stories, printer)
+		writeReleaseNoteReport(stories, printer)
+	}
 
-		return file
+	void generateLabelReport(file) {
+		log.info("(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)")
+		log.info("Validating release epic for label ${label} for branch ${branch} between ${start} and ${end}.")
+		log.info("(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)")
+
+		def logs = getLogs()
+		def tickets = getTickets(logs)
+
+		log.info("Found ${tickets.size()} tickets: ${tickets} in logs.")
+
+		def labelStories = getStoriesForLabel()
+
+		log.info("Retrieved ${labelStories.size()} stories.")
+		log.trace(labelStories)
+		def storiesToRemove = []
+		labelStories.each {story ->
+			if (tickets.contains(story.id.toString())) {
+				tickets.remove(story.id.toString())
+				storiesToRemove << story
+			}
+		}
+		labelStories.removeAll(storiesToRemove)
+
+		def commitStories = getStories(tickets)
+
+		FileWriter writer = new FileWriter(file)
+		IndentPrinter printer = new IndentPrinter(writer)
+
+		def builder = new MarkupBuilder(printer)
+
+		writeLabelReport("Unlabeled on Branch", commitStories, builder)
+		writeLabelReport("Missing From Branch", labelStories, builder)
 	}
 
 	def getTickets(logs) {
@@ -61,6 +99,17 @@ class ReleaseNotes {
 
 	def getLogs() {
 		return "git log ${start}..${end} --format=%b".execute().text
+	}
+
+	def getStoriesForLabel() {
+		def restClient = new RESTClient("${ptUrl}${project}/", ContentType.JSON)
+		restClient.headers.'X-TrackerToken' = token
+
+		try {
+			return restClient.get(path:"stories", query: [with_label: label]).data
+		} catch (ex) {
+			log.error(ex, ex)
+		}
 	}
 
 	def getStories(tickets) {
@@ -93,13 +142,16 @@ class ReleaseNotes {
 		return "git rev-parse --abbrev-ref HEAD".execute().text.trim()
 	}
 
-	void writeStories(stories, printer) {
+	void writeReleaseNoteReport(stories, printer) {
 
 		new MarkupBuilder(printer).table {
 			thead {
 				tr {
 					headers.each {h ->
 						th h
+					}
+					if (label) {
+						th label
 					}
 				}
 			}
@@ -116,6 +168,33 @@ class ReleaseNotes {
 							} else {
 								td story.get(field)
 							}
+						}
+						if (label) {
+							def labels = story.labels*.name
+							String result = labels.contains(label)?"YES":"NO"
+							td result
+						}
+					}
+				}
+			}
+		}
+	}
+
+	void writeLabelReport(tableCaption, stories, builder) {
+		builder.table {
+			thead {
+				caption tableCaption
+				tr {
+					th "Name"
+					th "URL"
+				}
+			}
+			tbody {
+				stories.each { story ->
+					tr {
+						td story.get("name")
+						td {
+							a(href: story.get("url"),  story.get("url"))
 						}
 					}
 				}

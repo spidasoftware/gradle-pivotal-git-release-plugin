@@ -1,7 +1,6 @@
 package com.spidasoftware.releasenotes
 
 import groovy.json.JsonSlurper
-
 /**
  *
  * User: mford
@@ -73,6 +72,7 @@ and some other stuff [Delivers #1234568]
       <th>Name</th>
       <th>Description</th>
       <th>URL</th>
+      <th>engine-5.0</th>
     </tr>
   </thead>
   <tbody>
@@ -84,15 +84,16 @@ and some other stuff [Delivers #1234568]
       <td>
         <a href='http://www.pivotaltracker.com/story/show/62676970'>http://www.pivotaltracker.com/story/show/62676970</a>
       </td>
+      <td>YES</td>
     </tr>
   </tbody>
 </table>"""
 		StringWriter writer = new StringWriter()
 		IndentPrinter printer = new IndentPrinter(writer)
 
-		ReleaseNotes notes = new ReleaseNotes()
+		ReleaseNotes notes = new ReleaseNotes(label:"engine-5.0")
 		def stories = [story]
-		notes.writeStories(stories, printer)
+		notes.writeReleaseNoteReport(stories, printer)
 
 		assertEquals("Should match output html", expected, writer.toString())
 
