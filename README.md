@@ -10,7 +10,8 @@ pivotal stories were resolved by the current build.
 
 ### Tasks:
 
-    releaseNotes - generates release-notes.html in your build folder
+    releaseNotes - generates release-notes.html in your build folder. lists all
+    releaseLabelReport - generates a report of how well the labeled stories in pivotal tracker match your commits
 
 ### How to include
 
@@ -26,9 +27,6 @@ Add to your build.gradle file
       }
     }
 
-
-
-
 ### Minimum required configuration:
 
     releaseNotes {
@@ -42,9 +40,11 @@ Add to your build.gradle file
       start = "HEAD"  // The start  git commit. Can be any commit name recognized by git.
       end = "HEAD"  // The end git commit.  Can be any commit name recognized by git.
       fileName = "./build/release-notes.html" // The output file produced
+      labelReportFileName = "./build/release-label-report.html" // the output file for the releaseLabelReport task
       project = null  // The tracker project id. Required in config.
       token = null    // The tracker user api token. Required in config.
       actionFilter = "" // Optional filter on pt integration commands. "Delivers" "Finishes" etc.
+      label = "" //  release label to check against
     }
 
 ### Command line options
