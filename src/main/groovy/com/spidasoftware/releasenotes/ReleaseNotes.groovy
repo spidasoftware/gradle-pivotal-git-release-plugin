@@ -192,6 +192,7 @@ class ReleaseNotes {
 				tr {
 					th "Name"
 					th "URL"
+					th "Labels"
 				}
 			}
 			tbody {
@@ -201,6 +202,7 @@ class ReleaseNotes {
 						td {
 							a(href: story.get("url"),  story.get("url"))
 						}
+						td story.labels*.name?.join(", ")
 					}
 				}
 			}

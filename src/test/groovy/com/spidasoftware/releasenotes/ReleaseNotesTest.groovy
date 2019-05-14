@@ -104,7 +104,8 @@ and some other stuff [Delivers #1234568]
 	void testGenerateLabelReport() {
 		def stories = [
 		        [name:"123",
-				url: "http://myurl.com"],
+				url: "http://myurl.com",
+				labels:[[name:"joe"]]],
 				[name: "456",
 				url: "http://yoururl.com"]
 		]
@@ -121,6 +122,7 @@ and some other stuff [Delivers #1234568]
     <tr>
       <th>Name</th>
       <th>URL</th>
+      <th>Labels</th>
     </tr>
   </thead>
   <tbody>
@@ -129,12 +131,14 @@ and some other stuff [Delivers #1234568]
       <td>
         <a href='http://myurl.com'>http://myurl.com</a>
       </td>
+      <td>joe</td>
     </tr>
     <tr>
       <td>456</td>
       <td>
         <a href='http://yoururl.com'>http://yoururl.com</a>
       </td>
+      <td />
     </tr>
   </tbody>
 </table>"""
