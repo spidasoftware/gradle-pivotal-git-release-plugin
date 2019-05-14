@@ -128,7 +128,7 @@ class ReleaseNotes {
 			} catch (ex) {
 				log.info("Failed to retrieve story for story ${it}")
 				log.error(ex, ex)
-				story = [id:it, name: "ERROR COULD NOT FIND tick ${it} IN PT PROJECT ${project}", labels:[], url:"https://www.pivotaltracker.com/story/show/${it}"]
+				story = [id:it, name: "ERROR COULD NOT FIND story ${it} IN PT PROJECT ${project}", labels:[], url:"https://www.pivotaltracker.com/story/show/${it}"]
 			}
 			stories << story
 
