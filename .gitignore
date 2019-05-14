@@ -4,3 +4,6 @@
 deployments/default/installation.log
 build
 .gradle
+.idea
+*.iml
+out
