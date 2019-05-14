@@ -16,6 +16,7 @@ class ReleaseNotesPluginExtension {
 	String project
 	String token
 	String fileName = "./build/release-notes.html"
+	String labelReportFileName = "./build/release-label-report.html"
 	String actionFilter = ""
 	String label = ""
 }

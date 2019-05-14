@@ -108,6 +108,7 @@ class ReleaseNotes {
 		try {
 			return restClient.get(path:"stories", query: [with_label: label]).data
 		} catch (ex) {
+			log.error("Failed to get stories for label ${label}")
 			log.error(ex, ex)
 		}
 	}
@@ -119,14 +120,18 @@ class ReleaseNotes {
 		def stories = []
 
 		tickets.each {
+			def story
 			try {
-				def story = getStory(restClient, it)
+				story = getStory(restClient, it)
 				log.info("Retrieving story ${it}")
 
-				stories << story
 			} catch (ex) {
+				log.info("Failed to retrieve story for story ${it}")
 				log.error(ex, ex)
+				story = [id:it, name: "ERROR COULD NOT FIND tick ${it} IN PT PROJECT ${project}", labels:[], url:"https://www.pivotaltracker.com/story/show/${it}"]
 			}
+			stories << story
+
 		}
 
 		return stories
@@ -206,7 +211,8 @@ class ReleaseNotes {
 		if (action != "") {
 			ticketRegex = ~/${action} #${numberRegex}/
 		} else {
-			ticketRegex = ~/#${numberRegex}/
+			ticketRegex = ~/${numberRegex}/
+			// we aren't using the hash so our search includes potential typos
 		}
 	}
 
