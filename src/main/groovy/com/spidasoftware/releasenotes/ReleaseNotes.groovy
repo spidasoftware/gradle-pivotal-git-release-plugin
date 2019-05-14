@@ -86,7 +86,7 @@ class ReleaseNotes {
 		IndentPrinter printer = new IndentPrinter(writer)
 
 		def builder = new MarkupBuilder(printer)
-
+		builder.h1 label
 		writeLabelReport("Unlabeled on Branch", commitStories, builder)
 		writeLabelReport("Missing From Branch", labelStories, builder)
 	}

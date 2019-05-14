@@ -1,6 +1,8 @@
 package com.spidasoftware.releasenotes
 
 import groovy.json.JsonSlurper
+import groovy.xml.MarkupBuilder
+
 /**
  *
  * User: mford
@@ -18,9 +20,9 @@ and some other stuff [Finishes #1234568]
 and some other stuff [Delivers #1234568]
 456
 #45 and junk
+[Delivers 1234569]
 """
-
-		assertEquals("Should have found two tickets", [1234567, 1234568].toString(), notes.getTickets(logs).toString())
+		assertEquals("Should have found two tickets", [1234567, 1234568, 1234569].toString(), notes.getTickets(logs).toString())
 	}
 
 	void testWriteStories() {
@@ -94,6 +96,48 @@ and some other stuff [Delivers #1234568]
 		ReleaseNotes notes = new ReleaseNotes(label:"engine-5.0")
 		def stories = [story]
 		notes.writeReleaseNoteReport(stories, printer)
+
+		assertEquals("Should match output html", expected, writer.toString())
+
+	}
+
+	void testGenerateLabelReport() {
+		def stories = [
+		        [name:"123",
+				url: "http://myurl.com"],
+				[name: "456",
+				url: "http://yoururl.com"]
+		]
+		StringWriter writer = new StringWriter()
+		IndentPrinter printer = new IndentPrinter(writer)
+
+		ReleaseNotes notes = new ReleaseNotes()
+		def builder = new MarkupBuilder(printer)
+		notes.writeLabelReport("My caption", stories, builder)
+
+		String expected =  """<table>
+  <thead>
+    <caption>My caption</caption>
+    <tr>
+      <th>Name</th>
+      <th>URL</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>123</td>
+      <td>
+        <a href='http://myurl.com'>http://myurl.com</a>
+      </td>
+    </tr>
+    <tr>
+      <td>456</td>
+      <td>
+        <a href='http://yoururl.com'>http://yoururl.com</a>
+      </td>
+    </tr>
+  </tbody>
+</table>"""
 
 		assertEquals("Should match output html", expected, writer.toString())
 
