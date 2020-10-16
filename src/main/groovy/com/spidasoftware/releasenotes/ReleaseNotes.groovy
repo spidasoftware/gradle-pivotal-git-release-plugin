@@ -70,7 +70,10 @@ class ReleaseNotes {
 		def labelStories = getStoriesForLabel()
 
 		log.info("Retrieved ${labelStories.size()} stories.")
-		log.trace(labelStories)
+		if (labelStories.size() == 0) {
+			throw new Exception("Couldn't find any stories")
+		}
+		log.debug(labelStories)
 		def storiesToRemove = []
 		labelStories.each {story ->
 			if (tickets.contains(story.id.toString())) {
@@ -104,13 +107,25 @@ class ReleaseNotes {
 	def getStoriesForLabel() {
 		def restClient = new RESTClient("${ptUrl}${project}/", ContentType.JSON)
 		restClient.headers.'X-TrackerToken' = token
-
+		def stories = []
 		try {
-			return restClient.get(path:"stories", query: [with_label: label]).data
+			int offset = 0
+			boolean more = true
+			while (more) {
+				def response = restClient.get(path: "stories",
+											  query: [with_label: label, offset: offset, envelope: true]).data
+				def pagination = response.pagination
+				stories.addAll(response.data)
+				offset += pagination.limit as Integer
+				more = offset < pagination.total
+			}
+			return stories
 		} catch (ex) {
 			log.error("Failed to get stories for label ${label}")
 			log.error(ex, ex)
+			throw (ex)
 		}
+		return []
 	}
 
 	def getStories(tickets) {
@@ -175,7 +190,7 @@ class ReleaseNotes {
 							}
 						}
 						if (label) {
-							def labels = story.labels*.name
+							def labels = story.labels*.name.sort()
 							String result = labels.contains(label)?"YES":"NO"
 							td result
 						}
