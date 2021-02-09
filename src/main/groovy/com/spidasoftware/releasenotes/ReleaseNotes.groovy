@@ -1,6 +1,5 @@
 package com.spidasoftware.releasenotes
 
-import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
 import groovy.xml.MarkupBuilder
 import groovyx.net.http.ContentType
@@ -123,14 +122,17 @@ class ReleaseNotes {
 				story?.estimate?:0
 			}
 			row.total = epicStories.sum {story ->
-				story?.estimate?:0
+				story?.estimate ?: 0
 			}
-			row.bugs = epicStories.count { story ->
+			row.deliveredBugs = epicStories.count { story ->
+				(story.story_type == "bug") &&
+						["accepted", "delivered"].contains(story.current_state)
+			}
+			row.bugsTotal = epicStories.count { story ->
 				(story.story_type == "bug")
 			}
 			return row
 		}
-
 
 		FileWriter writer = new FileWriter(file)
 		IndentPrinter printer = new IndentPrinter(writer)
@@ -278,7 +280,8 @@ class ReleaseNotes {
 					th "Name"
 					th "Delivered"
 					th "Total"
-					th "Bugs"
+					th "Delivered Bugs"
+					th "Total Bugs"
 				}
 			}
 			tbody {
@@ -287,7 +290,8 @@ class ReleaseNotes {
 						td story.get("name")
 						td story.get("delivered")
 						td story.get("total")
-						td story.get("bugs")
+						td story.get("deliveredBugs")
+						td story.get("bugsTotal")
 					}
 				}
 			}
