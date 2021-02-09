@@ -1,5 +1,6 @@
 package com.spidasoftware.releasenotes
 
+import groovy.transform.CompileStatic
 import groovy.util.logging.Log4j
 import groovy.xml.MarkupBuilder
 import groovyx.net.http.ContentType
@@ -92,6 +93,51 @@ class ReleaseNotes {
 		builder.h1 label
 		writeLabelReport("Unlabeled on Branch", commitStories, builder)
 		writeLabelReport("Missing From Branch", labelStories, builder)
+	}
+
+	void generateProgressReport(file) {
+		log.info("(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)")
+		log.info("Generating progress report for release label ${label}.")
+		log.info("(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)(_Y_)")
+
+		def labelStories = getStoriesForLabel()
+
+		Set uniqueLabels = new HashSet()
+
+		labelStories.each {
+			uniqueLabels.addAll(it.labels*.name)
+		}
+
+		def epics = uniqueLabels.collect { epic ->
+			def epicStories = labelStories.findAll {story ->
+				story.labels.any {it.name == epic}
+			}
+			def row = [:]
+			def epicFeatures = epicStories.findAll { story ->
+				(story.story_type == "feature")
+			}
+			row.name = epic
+			row.delivered = epicFeatures.findAll {story ->
+				["accepted", "delivered"].contains(story.current_state)
+			}.sum {story ->
+				story?.estimate?:0
+			}
+			row.total = epicStories.sum {story ->
+				story?.estimate?:0
+			}
+			row.bugs = epicStories.count { story ->
+				(story.story_type == "bug")
+			}
+			return row
+		}
+
+
+		FileWriter writer = new FileWriter(file)
+		IndentPrinter printer = new IndentPrinter(writer)
+
+		def builder = new MarkupBuilder(printer)
+		writeProgressReport("Progress Report ${label}", epics, builder)
+
 	}
 
 	def getTickets(logs) {
@@ -218,6 +264,30 @@ class ReleaseNotes {
 							a(href: story.get("url"),  story.get("url"))
 						}
 						td story.labels*.name?.join(", ")
+					}
+				}
+			}
+		}
+	}
+
+	void writeProgressReport(tableCaption, epics, builder) {
+		builder.table {
+			thead {
+				caption tableCaption
+				tr {
+					th "Name"
+					th "Delivered"
+					th "Total"
+					th "Bugs"
+				}
+			}
+			tbody {
+				epics.each { story ->
+					tr {
+						td story.get("name")
+						td story.get("delivered")
+						td story.get("total")
+						td story.get("bugs")
 					}
 				}
 			}
