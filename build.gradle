@@ -21,9 +21,6 @@ try {
 	println ex.message //use ex.printStackTrace() if you want to show the full stacktrace 
 }
 
-//uncomment to print out maven settings
-//println "m2Settings: ${m2Settings}" 
-
 repositories {
 	mavenCentral()
 	maven { url m2Settings.exposed }
@@ -34,7 +31,6 @@ dependencies {
 	compile localGroovy()
 	compile group:'org.codehaus.groovy.modules.http-builder', name:'http-builder', version: '0.7'
 	testCompile group: 'junit', name: 'junit', version: '4.11'
-//	deployerJars "org.apache.maven.wagon:wagon-http:2.2"
 }
 
 configurations {
@@ -43,7 +39,6 @@ configurations {
 uploadArchives {
 	repositories {
 		mavenDeployer {
-//			configuration = configurations.deployerJars
 			snapshotRepository(url: "${System.getenv('ARTIFACTORY_URL_BASE')}/libs-snapshot-local") {
 				authentication(userName: System.getenv('ARTIFACTORY_USERNAME'), password: System.getenv('ARTIFACTORY_PASSWORD'))
 			}
